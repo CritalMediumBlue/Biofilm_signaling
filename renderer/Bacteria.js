@@ -34,23 +34,10 @@ class Bacteria {
 		};
 		
 
-		this.clicked = function () {
-			let d = dist(mouseX, mouseY, this.body.position.x, this.body.position.y);
-			if (d < 15) {
-				console.log("Clicked");
+	
 
-				selected = true;
-				yellow_selection = true;
-			}
-
-		}; 
-
-		this.deselect = function () {
-			yellow_selection = false;
-		};
-
-
-		this.body = Bodies.rectangle(x, y, 10+4, l+2, options);
+	
+		this.body = Bodies.rectangle(x, y, 10+5, l+5, options);
 		Composite.add(objects, this.body);
 			
 
@@ -64,7 +51,7 @@ class Bacteria {
 			let cy = Math.floor(this.body.position.y / 30);
 
 			var scaleX = 1;
-			var scaleY = 1+(0.035);
+			var scaleY = 1+(0.031);
 			let original_angle = this.body.angle;
 			Body.rotate(this.body, -original_angle);
 			Body.scale(this.body, scaleX, scaleY);
@@ -77,8 +64,8 @@ class Bacteria {
 		};
 
 		this.move = function () {
-			let torque = 0.05;
-			let force=0.0005;
+			let torque = 0.09;
+			let force=0.0009;
 			this.body.torque = random(-torque, torque);
 			//Matter.Body.update(this.body, 20, 1, 1)
 			//Matter.Body.applyForce(body, position, force)
@@ -102,7 +89,7 @@ class Bacteria {
 
 		this.show_1 = function () {
 			if (this.body.label == "pink") {
-				fill(204-slrR*100, 50+slrR*120, 153+slrR*40, 200);
+				fill(204, 50, 153, 200);
 				stroke(104, 34, 139);
 			} else if (this.body.label == "green") {
 				fill(6, 164, 12, 200); //gren
@@ -132,7 +119,7 @@ class Bacteria {
 			translate(this.body.position.x, this.body.position.y);
 			rotate(this.body.angle);
 			strokeWeight(3);
-			rect(0, 0, 10, largo_max - largo_min, 10);
+			rect(0, 0, 10, largo_max - largo_min-5, 10);
 			pop();
 
 		};
@@ -160,8 +147,6 @@ class Bacteria {
 				Body.rotate(this.body, original_angle);
 				Composite.add(objects, New_Bacteria);
 				bacteria_array.push(New_Bacteria);
-				//time_to_repr=1;
-				//console.log(loops*281.25/3600);
 			}
 		};
 
@@ -170,20 +155,8 @@ class Bacteria {
 			let cx = Math.floor(this.body.position.x / 30); //coordinates for pink concentration must be an integer
 			let cy = Math.floor(this.body.position.y / 30);
 
-			/* if (cx>N){  //The concentration is only defined inside the area
-			   cx=0
-			 }
-			 if (cy>N){
-			   cy=0
-			 }
-			 if (cx<0){
-			   cx=N
-			 }
-			 if (cy<0){
-			   cy=N
-			 }*/
-			//if (this.body.label == "pink") {
-				u0[cx][cy] = u0[cx][cy] + P ; //The bacteria adds a little amount each frame
+		
+				comX_conc[cx][cy] = comX_conc[cx][cy] + P ; //The bacteria adds a little amount each frame
 			//} 
 
 
@@ -194,20 +167,8 @@ class Bacteria {
 			let cx = Math.floor(this.body.position.x / 30); //coordinates for pink concentration must be an integer
 			let cy = Math.floor(this.body.position.y / 30);
 
-			/* if (cx>N){  //The concentration is only defined inside the area
-			   cx=0
-			 }
-			 if (cy>N){
-			   cy=0
-			 }
-			 if (cx<0){
-			   cx=N
-			 }
-			 if (cy<0){
-			   cy=N
-			 }*/
 			if (this.body.label == "green") {
-				n0[cx][cy] = n0[cx][cy] +0.09 ; 
+				surf_conc[cx][cy] = surf_conc[cx][cy] +0.09 ; 
 			}
 		};
 
@@ -251,7 +212,7 @@ class Bacteria {
 			let cy = Math.floor(this.body.position.y / 30);
 
 
-			if ( sensibilidad_to_surfactin <= 5*u0[cx][cy] && this.body.label == "pink") {
+			if ( sensibilidad_to_surfactin <= 5*comX_conc[cx][cy] && this.body.label == "pink") {
 				this.body.label = "green";
 			}
 
@@ -279,7 +240,7 @@ class Bacteria {
 			let cy = Math.floor(this.body.position.y / 30);
 
 			d_SinR = (as / (1 + SlrR*10)) - bs * SinR - Kf * SlrR * SinR + Kd * SinR_SlrR;
-			d_SlrR = ar*(n0[cx][cy])*0.2 - br * SlrR - Kf * SlrR * SinR + Kd * SinR_SlrR;
+			d_SlrR = ar*(surf_conc[cx][cy])*0.2 - br * SlrR - Kf * SlrR * SinR + Kd * SinR_SlrR;
 			d_SinR_SlrR = -bc * SinR_SlrR + Kf * SinR * SlrR - Kd * SinR_SlrR;
 
 
