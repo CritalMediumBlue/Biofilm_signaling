@@ -2,7 +2,8 @@ class Bacteria {
 	constructor(x, y, l, angle, phenotype, sinR,slrR,sinI,sinR_slrR ) {
 
 		var p = l / 2, longitud_de_reproduccion = randomGaussian(60, 5), largo_max, largo_min, longitud_actual,
-			sensibilidad_to_surfactin=random(0,500),
+			sensibilidad_to_surfactin=random(8,700),
+			sensibilidad_to_2=randomGaussian(0.31, 0.15),
 			//time_to_repr,
 			//	current_positionx,
 			SinR = sinR, // inhibits matrix genes  arround 500 molecules per cell
@@ -24,7 +25,7 @@ class Bacteria {
 			frictionStatic:1,
 			chamfer: p,
 			angle: angle,
-			frictionAir: 0.999,
+			frictionAir: 0.997,
 			label: phenotype,
 			density: 0.005,
 			//inertia: Infinity,
@@ -37,7 +38,7 @@ class Bacteria {
 	
 
 	
-		this.body = Bodies.rectangle(x, y, 10+5, l+5, options);
+		this.body = Bodies.rectangle(x, y, 10+5, l+2, options);
 		Composite.add(objects, this.body);
 			
 
@@ -88,22 +89,30 @@ class Bacteria {
 		};
 
 		this.show_1 = function () {
-			if (this.body.label == "pink") {
-				fill(204, 50, 153, 200);
-				stroke(104, 34, 139);
-			} else if (this.body.label == "green") {
-				fill(6, 164, 12, 200); //gren
-				stroke(2, 84, 5); //green
-			} else if (this.body.label == "blue") {
-				fill(35, 255, 255, 200); //blue
-				stroke(0, 0, 200); //blue
-			}
+
+			if(show_continuous==1){
+
+			if (this.body.label == "green") {
+				fill(0, 255,0, 200); //gren
+			} else  {
+				fill(SinR*SinR*50, 50, SlrR*SlrR*0.7, 200); 
+				
 			
-			if (yellow_selection) {
-				fill(253, 208, 23, 255);
-				stroke(251, 117, 23);
 			}
 
+			stroke(0);
+		} else if (show_continuous==0){
+			if (this.body.label == "pink") {
+				fill(235, 130, 203);
+				stroke(54, 0, 99);
+			} else if (this.body.label == "green") {
+				fill(25, 185, 35); //gren
+				stroke(0, 20, 0); //green
+			} else if (this.body.label == "blue") {
+				fill(35, 255, 255); //blue
+				stroke(0, 0, 200); //blue
+			}
+		}
 
 
 
@@ -168,7 +177,7 @@ class Bacteria {
 			let cy = Math.floor(this.body.position.y / 30);
 
 			if (this.body.label == "green") {
-				surf_conc[cx][cy] = surf_conc[cx][cy] +0.09 ; 
+				surf_conc[cx][cy] = surf_conc[cx][cy] +P2 ; 
 			}
 		};
 
@@ -189,22 +198,7 @@ class Bacteria {
 			}
 		};
 
-		/*	this.produce_matrix=function(){
-			    
-				if (this.body.label=="green" && time_to_repr==1){
-					var move=p-3;
-					let matrix=new Matrix(current_positionx-move*sin(this.body.angle+PI/2),
-															current_positiony+move*cos(this.body.angle+PI/2));
-					let matrix2=new Matrix(current_positionx-move*sin(this.body.angle-PI/2),
-															current_positiony+move*cos(this.body.angle-PI/2));
-					Composite.add(objects,matrix);
-					Composite.add(objects,matrix2);
-					matrix_pices.push(matrix);
-					matrix_pices.push( matrix2);
-					time_to_repr=0;
-				    
-				}
-			}*/
+		
 		this.signaling_response_to_pink = function () {
 
 
@@ -222,9 +216,9 @@ class Bacteria {
 
 
 
-			if (SinR < 0.15 && this.body.label !== "green") {
+			if (SinR*3 < sensibilidad_to_2 && this.body.label !== "green") {
 				this.body.label = "blue";
-			} else if (SinR >= 0.15 && this.body.label !== "green"){
+			} else if (SinR*3 >= sensibilidad_to_2 && this.body.label !== "green"){
 				this.body.label = "pink";
 			}
 
@@ -263,56 +257,6 @@ class Bacteria {
 			//console.log(SinR_SlrR);
 		};
 
-		this.show_internal_circuit = function () {
-			if (selected == true) {
 
-
-				if (chart_exists == true) {
-					chart.destroy();
-					console.log("chart has been destroyed");
-					chart_exists = false;
-
-				}
-
-				ctx = document.getElementById('chart').getContext('2d');
-				chart = new Chart(ctx, {
-					type: 'line',
-					data: {
-						labels: SinR_times,
-						datasets: [{
-							label: 'SinR',
-							data: SinR_Array, pointRadius: 1,
-							pointHoverRadius: 1
-						}, {
-							label: 'SlrR',
-							data: SlrR_Array, pointRadius: 1,
-							pointHoverRadius: 1
-						},
-						{
-							label: 'Complex',
-							data: Complex_Array, pointRadius: 1,
-							pointHoverRadius: 1
-						}]
-					},
-					options: {
-						animation: {
-							duration: 0
-						},
-						plugins: {
-							customCanvasBackgroundColor: {
-								color: 'white',
-							}
-						}
-					}, plugins: [plugin],
-				});
-				chart_exists = true;
-				console.log("chart_exists");
-
-				console.log(selected);
-
-				selected = false;
-			}
-
-		};
 	}
 }

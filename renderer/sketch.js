@@ -9,7 +9,8 @@ var Engine = Matter.Engine,
 
 // Bacteria simulation parameters
 var bacteria_array = [],
-	P = 0.02, // Production of Comx
+	P = 0.007, // Production of Comx
+	P2 = 0.7, // Production of Surfactin
 	K = 5,    // Diffusion loops
 	A = 100;  // Difussion + matter.js loops
 
@@ -27,6 +28,7 @@ var loops = 0,  // Simulation steps
 	show_concentration = 2;
 
 p5.disableFriendlyErrors = true;
+show_continuous=0; // 1 means that the color of the bacteria will be continous, 0 means binary
 
 
 const NUM_BACTERIA = 5; // Define constant for the number of bacteria
@@ -49,7 +51,7 @@ function setup() {
 
 	// Create bacteria
 	for (let y = 0; y < NUM_BACTERIA; y++) {
-		createBacterium(N / 2, N / 2, 40, random(0, PI), "pink", 2.5, 0.5, 1, 1);
+		createBacterium(random((N*2)/5, (N*3)/5), random((N*2)/5, (N*3)/5), 40, random(0, PI), "pink", 2.5, 0.5, 1, 1);
 	}
 
 	createCanvas(N, N);
@@ -110,7 +112,6 @@ let final = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(0));
 		bacteria_array[i].grow();
 		bacteria_array[i].signaling_response_to_pink();
 		bacteria_array[i].signaling_response_to_surfactin();
-		bacteria_array[i].show_internal_circuit();
 		if(bacteria_array[i].isOffScreen()){
 		bacteria_array[i].removeFromWorld();
 		bacteria_array.splice(i,1);
