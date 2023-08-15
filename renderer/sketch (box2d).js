@@ -1,18 +1,12 @@
-
-
 // Physics engine variables
-var Engine = Matter.Engine,
-	Bodies = Matter.Bodies,
-	Body = Matter.Body,
-	Composite = Matter.Composite,
-	Runner = Matter.Runner,
-	engine = Engine.create(),
-	objects = Composite.create();
+import { b2World, b2BodyDef, b2Vec2, b2BodyType } from './libraries/box2d.ts/build/box2d.js';
+const gravity = new b2Vec2(0, 0);  // No gravity for a top-down simulation
+const world = new b2World(gravity);
 
 // Bacteria simulation parameters
 var bacteria_array = [],
-	P = 0.006, // Production of Comx
-	P2 = 0.03, // Production of Surfactin
+	P = 0.007, // Production of Comx
+	P2 = 0.7, // Production of Surfactin
 	K = 5,    // Diffusion loops
 	A = 100;  // Difussion + matter.js loops
 
@@ -26,7 +20,6 @@ var comX_conc = new Array(GRID_SIZE).fill(0).map(() => new Array(GRID_SIZE).fill
 
 // Additional parameters
 const N = 1530; // 620x620 canvas  GRID_SIZE*RECT_SIZE
-var loops = 0,  // Simulation steps
 	show_concentration = 2;
 
 p5.disableFriendlyErrors = true;
@@ -39,7 +32,7 @@ const NUM_BACTERIA = 5; // Define constant for the number of bacteria
 function createBacterium(x, y, size, angle, color, param1, param2, param3, param4) {
 	const bacterium = new Bacteria(x, y, size, angle, color, param1, param2, param3, param4);
 	bacteria_array.push(bacterium);
-	bacterium.displayBacterium();
+	bacterium.show_1();
 	return bacterium;
 }
 
@@ -55,18 +48,9 @@ function setup() {
 	for (let y = 0; y < NUM_BACTERIA; y++) {
 		createBacterium(random((N*2)/5, (N*3)/5), random((N*2)/5, (N*3)/5), 40, random(0, PI), "pink", 2.5, 0.5, 1, 1);
 	}
-
+	
 	createCanvas(N, N);
 	pixelDensity(1);
-	world = engine.world;
-	Runner.run(engine);
-	Composite.add(world, objects);
-	engine.gravity.y = 0;
-
-	// Define engine settings
-	engine.positionIterations = 10; // The bigger the slower, but the accuracy increases
-	engine.constraintIterations = 2; // The bigger the slower, but the accuracy increases
-	engine.velocityIterations = 10; // The bigger the slower, but the accuracy increases
 	
 
 	background(255);
@@ -108,13 +92,12 @@ let final = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(0));
 	// Do all the activities that related to bacterial metabolism and signalling
 	function updateBacteria() {
 		for (var i =0;  i < bacteria_array.length; i++){
-		bacteria_array[i].displayBacterium(); 
+		bacteria_array[i].show_1(); 
 		bacteria_array[i].move();
 		bacteria_array[i].reproduce();
 		bacteria_array[i].grow();
 		bacteria_array[i].signaling_response_to_pink();
 		bacteria_array[i].signaling_response_to_surfactin();
-		bacteria_array[i].internal_circuit();
 		if(bacteria_array[i].isOffScreen()){
 		bacteria_array[i].removeFromWorld();
 		bacteria_array.splice(i,1);
@@ -136,7 +119,7 @@ let final = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(0));
 				  fill(255, colorValue, 255, 255);
 				  break;
 				case 1:
-				  colorValue = 255 - surf_conc[i][j] * (4000);
+				  colorValue = 255 - surf_conc[i][j] * (255 / 1);
 				  fill(colorValue, 255, colorValue, 255);
 				  break;
 				case 2:
@@ -155,7 +138,7 @@ let final = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(0));
 				const bacteria = bacteria_array[i];
 				bacteria.produce_pink();
 				bacteria.produce_surfactin();
-				
+				bacteria.internal_circuit();
 			}
 			comX_conc = diffusion(comX_conc);
 			surf_conc = diffusion(surf_conc);
@@ -164,8 +147,8 @@ let final = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(0));
 		drawGrid();
 		updateBacteria();
 	
-		for (var i = 0; i < 15; i++) {
-			Engine.update(engine, 1);
+		for (var i = 0; i < 2; i++) {
+			world.Step(1/60, 10, 10);  // Assuming a 60Hz update rate, adjust as needed
 		}
 		requestAnimationFrame(animate);
 }

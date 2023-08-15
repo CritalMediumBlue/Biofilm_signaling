@@ -1,23 +1,21 @@
 class Bacteria {
 	constructor(x, y, l, angle, phenotype, sinR,slrR,sinI,sinR_slrR ) {
 
-		var p = l / 2, longitud_de_reproduccion = randomGaussian(60, 5), largo_max, largo_min, longitud_actual,
-			sensibilidad_to_surfactin=random(8,700),
-			sensibilidad_to_2=randomGaussian(0.31, 0.15),
-			//time_to_repr,
-			//	current_positionx,
+		var p = l / 2, longitud_de_reproduccion = randomGaussian(60, 5), largo_max, largo_min, longitudActual,
+			sensibilidad_to_comX=randomGaussian(70, 20), //The smaller the more sensible
+			sensibilidad_to_surfactin=randomGaussian(0.9, 0.4), //The higher the more sensible
 			SinR = sinR, // inhibits matrix genes  arround 500 molecules per cell
 			SlrR = slrR, // inhibits motility genes arround 500 molecules per cell
 			SinI = sinI, // inhibits SinR arround 500 molecules per cell
 			SinR_SlrR = sinR_slrR, // complex
 			as = 0.04, //SinR production rate   30 min-1 = 0.0225 loop-1
-			ar = 0.1, //SlrR production rate    20 min-1 =  0.015 loop-1
+			ar = 1, //SlrR production rate    20 min-1 =  0.015 loop-1
 			d_SinR, d_SlrR, d_SinR_SlrR, bs = 0.01,  //SinR degradiation rate 
 			br = 0.01, //SlrR degradiation rate
 			bc = 0.002, //complex degradiation rate
 			Kf = 0.1, //complex formation rate
 			Kd = 0.001, //complex degradation rate
-			SinR_Array = [], SinR_times = [], SlrR_Array = [], Complex_Array = [], yellow_selection, selected = false;
+			SinR_Array = [], SinR_times = [], SlrR_Array = [], Complex_Array = [];
 
 		var options = {
 			restitution: 1,
@@ -25,119 +23,123 @@ class Bacteria {
 			frictionStatic:1,
 			chamfer: p,
 			angle: angle,
-			frictionAir: 0.997,
+			frictionAir: 0.85,
 			label: phenotype,
 			density: 0.005,
-			//inertia: Infinity,
-			//inverseInertia: Infinity,
 			slop:0.01,
-			//isStatic: true 
 		};
 		
 
 	
 
 	
-		this.body = Bodies.rectangle(x, y, 10+5, l+2, options);
+		this.body = Bodies.rectangle(x, y, 10+5, l+1, options);
 		Composite.add(objects, this.body);
 			
 
-		//this.setInertia(particle, Infinity);
-		this.grow = function () {
-			//Matter.Body.update(this.body, 20, 1, 1);
-			//this.stiffness=1;
-			//Body.setInertia(this, 0);
-			if (this.body.label !== "green"){
-			let cx = Math.floor(this.body.position.x / 30); //coordinates for pink concentration must be an integer
-			let cy = Math.floor(this.body.position.y / 30);
-
-			var scaleX = 1;
-			var scaleY = 1+(0.031);
-			let original_angle = this.body.angle;
-			Body.rotate(this.body, -original_angle);
-			Body.scale(this.body, scaleX, scaleY);
-			largo_max = this.body.bounds.max.y;
-			largo_min = this.body.bounds.min.y;
-			longitud_actual = largo_max - largo_min;
-			Body.rotate(this.body, original_angle);
-			//Matter.Body.update(this.body, 20, 1, 1);
-			}
-		};
-
-		this.move = function () {
-			let torque = 0.09;
-			let force=0.0009;
-			this.body.torque = random(-torque, torque);
-			//Matter.Body.update(this.body, 20, 1, 1)
-			//Matter.Body.applyForce(body, position, force)
-			Body.setAngularVelocity(this.body, random(-20,20));
-			
-			//this.body.velocity.x=1000;
-			
-			//Matter.Body.update(this.body, 20, 1, 1);
-			//Matter.Body.update(this.body, 20, 1, 1);
-			Body.applyForce(this.body, {x: this.body.position.x, y: this.body.position.y},  {x: random(-force, force), y: random(-force, force)});
-			Body.setVelocity(this.body, {x:random(-200,200),y:random(-200,200)} );
-
-			//Matter.Body.update(this.body, 20, 1, 1);
-		};
-
-		this.measure = function () {
-			largo_max = this.body.bounds.max.y;
-			largo_min = this.body.bounds.min.y;
-			longitud_actual = largo_max - largo_min;
-		};
-
-		this.show_1 = function () {
-
-			if(show_continuous==1){
-
-			if (this.body.label == "green") {
-				fill(0, 255,0, 200); //gren
-			} else  {
-				fill(SinR*SinR*50, 50, SlrR*SlrR*0.7, 200); 
+		this.grow = function() {
+			// If the bacteria isn't labeled as "green", let it grow
+			if (this.body.label !== "green") {
+				const growthFactorY = 1 + 0.031;  // Growth rate along the Y-axis
+				const originalAngle = this.body.angle;  // Store the original angle before scaling
+		
+				// Temporarily align the bacteria vertically for consistent growth
+				Body.rotate(this.body, -originalAngle);
 				
-			
+				// Grow the bacteria along the Y-axis
+				Body.scale(this.body, 1, growthFactorY);
+		
+				// Restore the bacteria's original orientation
+				Body.rotate(this.body, originalAngle);
 			}
-
-			stroke(0);
-		} else if (show_continuous==0){
-			if (this.body.label == "pink") {
-				fill(235, 130, 203);
-				stroke(54, 0, 99);
-			} else if (this.body.label == "green") {
-				fill(25, 185, 35); //gren
-				stroke(0, 20, 0); //green
-			} else if (this.body.label == "blue") {
-				fill(35, 255, 255); //blue
-				stroke(0, 0, 200); //blue
-			}
-		}
-
-
-
-			let original_angle = this.body.angle;
-			Body.rotate(this.body, -this.body.angle);
-			largo_max = this.body.bounds.max.y;
-			largo_min = this.body.bounds.min.y;
-			longitud_actual = largo_max - largo_min;
-			Body.rotate(this.body, original_angle);
-
-			push();
-			rectMode(CENTER);
-			translate(this.body.position.x, this.body.position.y);
-			rotate(this.body.angle);
-			strokeWeight(3);
-			rect(0, 0, 10, largo_max - largo_min-5, 10);
-			pop();
-
 		};
+		
+		
+		
+
+		this.move = function() {
+			// Apply random torque to the bacterium's body
+			const TORQUE_VALUE = 40;
+			this.body.torque = randomGaussian(0, TORQUE_VALUE);
+		
+			// Apply random force to the bacterium's body
+			const FORCE_VALUE = 2;
+			let force = randomGaussian(0, FORCE_VALUE);
+			Body.applyForce(
+				this.body, 
+				{ x: this.body.position.x, y: this.body.position.y },  
+				{ x: force, y: force }
+			);
+		};
+		
+
+
+		// Helper function to get color based on bacterium label
+function getColorBasedOnLabel(label) {
+    switch (label) {
+        case "pink":
+            return { fillColor: color(235, 130, 203), strokeColor: color(54, 0, 99) };
+        case "green":
+            return { fillColor: color(25, 185, 35), strokeColor: color(0, 20, 0) };
+        case "blue":
+            return { fillColor: color(35, 255, 255), strokeColor: color(0, 0, 200) };
+        default:
+            return { fillColor: color(255, 255, 255), strokeColor: color(0, 0, 0) };
+    }
+}
+
+this.displayBacterium = function () {
+    let colors;
+
+    if (show_continuous === 1) {
+        if (this.body.label === "green") {
+            colors = { fillColor: color(0, 255, 0, 200), strokeColor: color(0) };
+        } else {
+            // Constants for clarity
+            const FILL_INTENSITY1 = 30;
+            const FILL_INTENSITY2 = 10;
+
+            colors = {
+                fillColor: color(SinR * SinR * FILL_INTENSITY1, 255, SlrR *SlrR* FILL_INTENSITY2, 200),
+                strokeColor: color(0)
+            };
+        }
+    } else {
+        colors = getColorBasedOnLabel(this.body.label);
+    }
+
+    const { fillColor, strokeColor } = colors;
+    fill(fillColor);
+    stroke(strokeColor);
+
+    const originalAngle = this.body.angle;
+    Body.rotate(this.body, -originalAngle);
+    longitudActual = this.body.bounds.max.y - this.body.bounds.min.y;
+    Body.rotate(this.body, originalAngle);
+
+    push();
+    rectMode(CENTER);
+    translate(this.body.position.x, this.body.position.y);
+    rotate(this.body.angle);
+    strokeWeight(3);
+
+    // Constants for clarity
+    const RECT_WIDTH = 10;
+    const RECT_CORNER_RADIUS = 10;
+
+    rect(0, 0, RECT_WIDTH, longitudActual - 5, RECT_CORNER_RADIUS);
+    pop();
+};
+
+		
+
+		
 
 		this.reproduce = function () {
-			if (longitud_actual >= longitud_de_reproduccion) {
+			if (longitudActual >= longitud_de_reproduccion) {
 				//	current_positionx=this.body.position.x;
 				//	current_positiony=this.body.position.y;
-				var move = longitud_actual / 4;
+				var move = longitudActual / 4;
 				let New_Bacteria = new Bacteria(this.body.position.x - move * sin(this.body.angle),
 					this.body.position.y + move * cos(this.body.angle),
 					(longitud_de_reproduccion / 2)-1,
@@ -152,7 +154,7 @@ class Bacteria {
 				Body.scale(this.body, 1, scaleY);
 				largo_max = this.body.bounds.max.y;
 				largo_min = this.body.bounds.min.y;
-				longitud_actual = largo_max - largo_min;
+				longitudActual = largo_max - largo_min;
 				Body.rotate(this.body, original_angle);
 				Composite.add(objects, New_Bacteria);
 				bacteria_array.push(New_Bacteria);
@@ -206,7 +208,7 @@ class Bacteria {
 			let cy = Math.floor(this.body.position.y / 30);
 
 
-			if ( sensibilidad_to_surfactin <= 5*comX_conc[cx][cy] && this.body.label == "pink") {
+			if ( sensibilidad_to_comX <= 5*comX_conc[cx][cy] && this.body.label == "pink") {
 				this.body.label = "green";
 			}
 
@@ -216,9 +218,9 @@ class Bacteria {
 
 
 
-			if (SinR*3 < sensibilidad_to_2 && this.body.label !== "green") {
+			if (SinR*7 < sensibilidad_to_surfactin && this.body.label !== "green") {
 				this.body.label = "blue";
-			} else if (SinR*3 >= sensibilidad_to_2 && this.body.label !== "green"){
+			} else if (SinR*7 >= sensibilidad_to_surfactin && this.body.label !== "green"){
 				this.body.label = "pink";
 			}
 
@@ -234,7 +236,7 @@ class Bacteria {
 			let cy = Math.floor(this.body.position.y / 30);
 
 			d_SinR = (as / (1 + SlrR*10)) - bs * SinR - Kf * SlrR * SinR + Kd * SinR_SlrR;
-			d_SlrR = ar*(surf_conc[cx][cy])*0.2 - br * SlrR - Kf * SlrR * SinR + Kd * SinR_SlrR;
+			d_SlrR = ar*(surf_conc[cx][cy]) - br * SlrR - Kf * SlrR * SinR + Kd * SinR_SlrR;
 			d_SinR_SlrR = -bc * SinR_SlrR + Kf * SinR * SlrR - Kd * SinR_SlrR;
 
 
