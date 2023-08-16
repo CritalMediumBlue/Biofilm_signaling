@@ -1,7 +1,7 @@
 
 
-// Physics engine variables
-var Engine = Matter.Engine,
+// Physics engine constiables
+const Engine = Matter.Engine,
 	Bodies = Matter.Bodies,
 	Body = Matter.Body,
 	Composite = Matter.Composite,
@@ -10,34 +10,41 @@ var Engine = Matter.Engine,
 	objects = Composite.create();
 
 // Bacteria simulation parameters
-var bacteria_array = [],
-	P = 0.006, // Production of Comx
-	P2 = 0.03, // Production of Surfactin
+let bacteria_array = [],
+	P = 0.01, // Production of Comx
+	P2 = 0.01, // Production of Surfactin
 	K = 5,    // Diffusion loops
-	A = 100;  // Difussion + matter.js loops
+	A = 100,  // Difussion + matter.js loops
+	bacteriaCounts = [];
 
 // Grid settings
-const GRID_SIZE = 51;
-const RECT_SIZE = 30;
-var comX_conc = new Array(GRID_SIZE).fill(0).map(() => new Array(GRID_SIZE).fill(0)),
-	surf_conc = new Array(GRID_SIZE).fill(0).map(() => new Array(GRID_SIZE).fill(0));
+const GRID_CONFIG  = {
+    SIZE: 51,
+    RECT_SIZE: 30
+};
 
+function initArray(size, value) {
+    return new Array(size).fill(0).map(() => new Array(size).fill(value));
+}
+
+let comX_conc = initArray(GRID_CONFIG.SIZE, 0),
+    surf_conc = initArray(GRID_CONFIG.SIZE, 0);
 	
 
 // Additional parameters
-const N = 1530; // 620x620 canvas  GRID_SIZE*RECT_SIZE
-var loops = 0,  // Simulation steps
+const N = 1530; // 620x620 canvas  GRID_CONFIG .SIZE*GRID_CONFIG .RECT_SIZE
+let loops = 0,  // Simulation steps
 	show_concentration = 2;
 
 p5.disableFriendlyErrors = true;
 show_continuous=0; // 1 means that the color of the bacteria will be continous, 0 means binary
 
 
-const NUM_BACTERIA = 5; // Define constant for the number of bacteria
+const NUM_BACTERIA = 2; // Define constant for the number of bacteria
 
 // Function to create a bacterium
-function createBacterium(x, y, size, angle, color, param1, param2, param3, param4) {
-	const bacterium = new Bacteria(x, y, size, angle, color, param1, param2, param3, param4);
+function createBacterium(x, y, size, angle, color, param1, param2, param4) {
+	const bacterium = new Bacteria(x, y, size, angle, color, param1, param2, param4);
 	bacteria_array.push(bacterium);
 	bacterium.displayBacterium();
 	return bacterium;
@@ -45,15 +52,10 @@ function createBacterium(x, y, size, angle, color, param1, param2, param3, param
 
 function setup() {
 	
-	noLoop(); // The simulation do not start until I execute loop()
-	for (let i = 0; i < GRID_SIZE; i++) {
-		comX_conc[i] = new Array(GRID_SIZE).fill(0);
-		surf_conc[i] = new Array(GRID_SIZE).fill(0);
-	}
 
 	// Create bacteria
 	for (let y = 0; y < NUM_BACTERIA; y++) {
-		createBacterium(random((N*2)/5, (N*3)/5), random((N*2)/5, (N*3)/5), 40, random(0, PI), "pink", 2.5, 0.5, 1, 1);
+		createBacterium(random((N*2)/5, (N*3)/5), random((N*2)/5, (N*3)/5), random(25,55), random(0, PI), "pink", 2.5, 0.5, 1, 1);
 	}
 
 	createCanvas(N, N);
@@ -73,7 +75,7 @@ function setup() {
 	strokeWeight(1);
 }
 
-let final = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(0)); 
+let final = Array(GRID_CONFIG.SIZE).fill(null).map(() => Array(GRID_CONFIG.SIZE).fill(0)); 
 
 	function diffusion(initial) {
 		const diffusionConstant = 0.5 * 0.5* 0.5 ;
@@ -107,7 +109,7 @@ let final = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(0));
 
 	// Do all the activities that related to bacterial metabolism and signalling
 	function updateBacteria() {
-		for (var i =0;  i < bacteria_array.length; i++){
+		for (let i =0;  i < bacteria_array.length; i++){
 		bacteria_array[i].displayBacterium(); 
 		bacteria_array[i].move();
 		bacteria_array[i].reproduce();
@@ -127,8 +129,8 @@ let final = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(0));
 	  function drawGrid() {
 		stroke(150);
 		strokeWeight(0.5);
-		for (var j = 0; j < GRID_SIZE; j++) {
-			for (var i = 0; i < GRID_SIZE; i++) {
+		for (let j = 0; j < GRID_CONFIG.SIZE; j++) {
+			for (let i = 0; i < GRID_CONFIG.SIZE; i++) {
 			  let colorValue;
 			  switch (show_concentration) {
 				case 0:
@@ -136,22 +138,22 @@ let final = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(0));
 				  fill(255, colorValue, 255, 255);
 				  break;
 				case 1:
-				  colorValue = 255 - surf_conc[i][j] * (4000);
+				  colorValue = 255 - surf_conc[i][j] * (10000);
 				  fill(colorValue, 255, colorValue, 255);
 				  break;
 				case 2:
 				  fill(255, 255, 255, 255);
 				  break;
 			  }
-			  rect(RECT_SIZE * i + 1, RECT_SIZE * j + 1, RECT_SIZE, RECT_SIZE);
+			  rect(GRID_CONFIG.RECT_SIZE * i + 1, GRID_CONFIG.RECT_SIZE * j + 1, GRID_CONFIG.RECT_SIZE, GRID_CONFIG.RECT_SIZE);
 			}
 		  }
 	  }
 
 	  // P5.js infinite loop that shows the state of the simulation
 	  function animate() {
-		for(var a = 0; a <= A; a++) {
-			for (var i = 0; i < bacteria_array.length; i++) {
+		for(let a = 0; a <= A; a++) {
+			for (let i = 0; i < bacteria_array.length; i++) {
 				const bacteria = bacteria_array[i];
 				bacteria.produce_pink();
 				bacteria.produce_surfactin();
@@ -164,10 +166,42 @@ let final = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(0));
 		drawGrid();
 		updateBacteria();
 	
-		for (var i = 0; i < 15; i++) {
+		for (let i = 0; i < 15; i++) {
 			Engine.update(engine, 1);
 		}
+		countBacteriaColors();
 		requestAnimationFrame(animate);
+
+	
+		
+
+}
+
+function countBacteriaColors() {
+	let pinkCount = 0, blueCount = 0, greenCount = 0;
+
+	bacteria_array.forEach(bacteria => {
+		switch (bacteria.body.label) {
+			case "pink": pinkCount++; break;
+			case "blue": blueCount++; break;
+			case "green": greenCount++; break;
+		}
+	});
+
+	bacteriaCounts.push([pinkCount, blueCount, greenCount]);
+}
+function arrayToCSV(data) {
+    return data.map(row => row.join(",")).join("\n");
+}
+function downloadCSV() {
+    let csvContent = "data:text/csv;charset=utf-8," + arrayToCSV([["pink", "blue", "green"], ...bacteriaCounts]);
+    var encodedUri = encodeURI(csvContent);
+    var link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "bacteria_counts.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }
 
 requestAnimationFrame(animate);
