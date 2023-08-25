@@ -11,36 +11,39 @@ const Engine = Matter.Engine,
 
 // Bacteria simulation parameters
 let bacteria_array = [],
-	P = 0.01, // Production of Comx
-	P2 = 0.01, // Production of Surfactin
-	K = 5,    // Diffusion loops
-	A = 100,  // Difussion + matter.js loops
+	P = 0.2, // Production of Comx //Should be 0.01 !!
+	P2 = 0.2, // Production of Surfactin //Should be 0.01 !!
+	P3 = 0.2 // Production of Matrix
+	K = 2,    // Diffusion loops
+	A = 2,  // Difussion + matter.js loops
+	killThem = 0,
 	bacteriaCounts = [];
 
 // Grid settings
 const GRID_CONFIG  = {
-    SIZE: 51,
-    RECT_SIZE: 30
+    SIZE: 60+1,
+    RECT_SIZE: 60  //50 micrometers
 };
 
 function initArray(size, value) {
     return new Array(size).fill(0).map(() => new Array(size).fill(value));
 }
 
-let comX_conc = initArray(GRID_CONFIG.SIZE, 0),
-    surf_conc = initArray(GRID_CONFIG.SIZE, 0);
+let comxConc = initArray(GRID_CONFIG.SIZE, 0),
+    surfConc = initArray(GRID_CONFIG.SIZE, 0);
+	matrConc = initArray(GRID_CONFIG.SIZE, 0);
 	
 
 // Additional parameters
-const N = 1530; // 620x620 canvas  GRID_CONFIG .SIZE*GRID_CONFIG .RECT_SIZE
+const N = GRID_CONFIG.SIZE*GRID_CONFIG.RECT_SIZE; // 620x620 canvas  
 let loops = 0,  // Simulation steps
 	show_concentration = 2;
 
-p5.disableFriendlyErrors = true;
+//p5.disableFriendlyErrors = true;
 show_continuous=0; // 1 means that the color of the bacteria will be continous, 0 means binary
 
 
-const NUM_BACTERIA = 2; // Define constant for the number of bacteria
+const NUM_BACTERIA = 1; // Define constant for the number of bacteria
 
 // Function to create a bacterium
 function createBacterium(x, y, size, angle, color, param1, param2, param4) {
@@ -55,8 +58,9 @@ function setup() {
 
 	// Create bacteria
 	for (let y = 0; y < NUM_BACTERIA; y++) {
-		createBacterium(random((N*2)/5, (N*3)/5), random((N*2)/5, (N*3)/5), random(25,55), random(0, PI), "pink", 2.5, 0.5, 1, 1);
+		createBacterium(random((N)/2, (N)/2), random((N)/2, (N)/2), random(25,55), random(0, PI), "pink", 2.5, 0.5, 1, 1);
 	}
+	
 
 	createCanvas(N, N);
 	pixelDensity(1);
@@ -66,9 +70,9 @@ function setup() {
 	engine.gravity.y = 0;
 
 	// Define engine settings
-	engine.positionIterations = 10; // The bigger the slower, but the accuracy increases
+	engine.positionIterations = 8; // The bigger the slower, but the accuracy increases
 	engine.constraintIterations = 2; // The bigger the slower, but the accuracy increases
-	engine.velocityIterations = 10; // The bigger the slower, but the accuracy increases
+	engine.velocityIterations = 8; // The bigger the slower, but the accuracy increases
 	
 
 	background(255);
@@ -77,22 +81,22 @@ function setup() {
 
 let final = Array(GRID_CONFIG.SIZE).fill(null).map(() => Array(GRID_CONFIG.SIZE).fill(0)); 
 
-	function diffusion(initial) {
-		const diffusionConstant = 0.5 * 0.5* 0.5 ;
+	function diffusion(initial, constant) {
+		const diffusionConstant = constant ;
 	
 		for(let k = 0; k <= K; k++) {
 			// Zero the edges of the final array (absorbing Dirichlet boundary conditions)
-			for(let j = 0; j <= 50; j++) {
-				final[0][j] = final[50][j] = final[j][0] = final[j][50] = 0;
+			for(let j = 0; j <= GRID_CONFIG.SIZE-1; j++) {
+				final[0][j] = final[GRID_CONFIG.SIZE-1][j] = final[j][0] = final[j][GRID_CONFIG.SIZE-1] = 0;
 			}
-			final[50][50] = final[50][49];
-			final[0][50] = final[0][49];
+			final[GRID_CONFIG.SIZE-1][GRID_CONFIG.SIZE-1] = final[GRID_CONFIG.SIZE-1][GRID_CONFIG.SIZE-2];
+			final[0][GRID_CONFIG.SIZE-1] = final[0][GRID_CONFIG.SIZE-2];
 			final[0][0] = final[0][1];
-			final[50][0] = final[50][1];
+			final[GRID_CONFIG.SIZE-1][0] = final[GRID_CONFIG.SIZE-1][1];
 	
 			// Iterate through interior grid points
-			for(let i = 1; i <= 49; i++) {
-				for(let j = 1; j <= 49; j++) {
+			for(let i = 1; i <= GRID_CONFIG.SIZE-2; i++) {
+				for(let j = 1; j <= GRID_CONFIG.SIZE-2; j++) {
 					const current = initial[i][j];
 					final[i][j] = current + diffusionConstant * ((initial[i+1][j] + initial[i][j+1] + initial[i-1][j] + initial[i][j-1]) - 4 * current);
 				}
@@ -114,8 +118,7 @@ let final = Array(GRID_CONFIG.SIZE).fill(null).map(() => Array(GRID_CONFIG.SIZE)
 		bacteria_array[i].move();
 		bacteria_array[i].reproduce();
 		bacteria_array[i].grow();
-		bacteria_array[i].signaling_response_to_pink();
-		bacteria_array[i].signaling_response_to_surfactin();
+		bacteria_array[i].differentiation();
 		bacteria_array[i].internal_circuit();
 		if(bacteria_array[i].isOffScreen()){
 		bacteria_array[i].removeFromWorld();
@@ -134,16 +137,19 @@ let final = Array(GRID_CONFIG.SIZE).fill(null).map(() => Array(GRID_CONFIG.SIZE)
 			  let colorValue;
 			  switch (show_concentration) {
 				case 0:
-				  colorValue = 255 - comX_conc[i][j] * (255 / 3);
+				  colorValue = 255 - comxConc[i][j] *(255 /30);
 				  fill(255, colorValue, 255, 255);
 				  break;
 				case 1:
-				  colorValue = 255 - surf_conc[i][j] * (10000);
+				  colorValue = 255 - surfConc[i][j] * (100);
 				  fill(colorValue, 255, colorValue, 255);
 				  break;
 				case 2:
-				  fill(255, 255, 255, 255);
+				  colorValue = 255 - matrConc[i][j] ;
+				  fill(colorValue, colorValue, 255, 255);
 				  break;
+
+				  
 			  }
 			  rect(GRID_CONFIG.RECT_SIZE * i + 1, GRID_CONFIG.RECT_SIZE * j + 1, GRID_CONFIG.RECT_SIZE, GRID_CONFIG.RECT_SIZE);
 			}
@@ -153,20 +159,21 @@ let final = Array(GRID_CONFIG.SIZE).fill(null).map(() => Array(GRID_CONFIG.SIZE)
 	  // P5.js infinite loop that shows the state of the simulation
 	  function animate() {
 		for(let a = 0; a <= A; a++) {
+
 			for (let i = 0; i < bacteria_array.length; i++) {
-				const bacteria = bacteria_array[i];
-				bacteria.produce_pink();
-				bacteria.produce_surfactin();
+
+				bacteria_array[i].produce_signal();
 				
 			}
-			comX_conc = diffusion(comX_conc);
-			surf_conc = diffusion(surf_conc);
+			comxConc = diffusion(comxConc, 0.125);
+			surfConc = diffusion(surfConc, 0.125);
+			matrConc = diffusion(matrConc, 0.001);
 		}
 	
 		drawGrid();
 		updateBacteria();
 	
-		for (let i = 0; i < 15; i++) {
+		for (let i = 0; i < 4; i++) {
 			Engine.update(engine, 1);
 		}
 		countBacteriaColors();
@@ -178,23 +185,24 @@ let final = Array(GRID_CONFIG.SIZE).fill(null).map(() => Array(GRID_CONFIG.SIZE)
 }
 
 function countBacteriaColors() {
-	let pinkCount = 0, blueCount = 0, greenCount = 0;
+	let pinkCount = 0, blueCount = 0, greenCount = 0, grayCount = 0;
 
 	bacteria_array.forEach(bacteria => {
 		switch (bacteria.body.label) {
 			case "pink": pinkCount++; break;
 			case "blue": blueCount++; break;
 			case "green": greenCount++; break;
+			case "gray" : grayCount++; break;
 		}
 	});
 
-	bacteriaCounts.push([pinkCount, blueCount, greenCount]);
+	bacteriaCounts.push([pinkCount, blueCount, greenCount, grayCount]);
 }
 function arrayToCSV(data) {
     return data.map(row => row.join(",")).join("\n");
 }
 function downloadCSV() {
-    let csvContent = "data:text/csv;charset=utf-8," + arrayToCSV([["pink", "blue", "green"], ...bacteriaCounts]);
+    let csvContent = "data:text/csv;charset=utf-8," + arrayToCSV([["pink", "blue", "green", "gray"], ...bacteriaCounts]);
     var encodedUri = encodeURI(csvContent);
     var link = document.createElement("a");
     link.setAttribute("href", encodedUri);
